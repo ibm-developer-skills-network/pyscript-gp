@@ -1,0 +1,207 @@
+<html>
+
+<head>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.2.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.2.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.2.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/@holoviz/panel@0.13.0/dist/panel.min.js"></script>
+    <script type="text/javascript">
+      Bokeh.set_log_level("info");
+    </script>
+
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <py-env>
+        - numpy
+        - pandas
+        - panel==0.13.1a2
+        - paths:
+            - src/helper.py
+        - seaborn
+        - matplotlib
+        - scikit-learn
+    </py-env>
+</head>
+
+<body>
+    <div class="jumbotron">
+        <h3>Data Visualization</h3>
+        <p class="lead">
+           Some graphs about your dataset of choice.
+        </p>
+     </div>
+    <div>
+        <div class="form-group row">
+            <label for="inputx" class="col-sm-1 col-form-label"></label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="inputx" placeholder="x">
+            </div>
+            <label for="inputy" class="col-sm-1 col-form-label"></label>
+            <div class="col-sm-4">
+              <input type="text" class="form-control" id="inputy" placeholder="y">
+            </div>
+        </div>
+    </div>
+    <div>
+        </div>
+    <div>
+        <div>
+           <select class="form-control" id="select">
+              <option value="splot">Scatterplot</option>
+              <option value="lplot">Lineplot</option>
+              <option value="dist">Distribution</option> 
+              <option value="bplot">Barplot</option> 
+              <option value="boplot">Boxplot</option> 
+           </select>
+        </div>
+    </div>
+     </div>
+    <div class="row">
+        <div class="col-sm-6 p-2 shadow ml-4 mr-4 mb-4 bg-white rounded">
+           <div id="chart1"></div>
+        </div>
+     </div>
+     <div>
+        <form>
+            <div class="form-group row">
+              <label for="year" class="col-sm-2 col-form-label">Year</label>
+              <div class="col-sm-10">
+                <input type="number" class="form-control" id="year" placeholder=2021 default=2021>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="mileage" class="col-sm-2 col-form-label">Mileage</label>
+              <div class="col-sm-10">
+                <input type="number" class="form-control" id="mileage" placeholder=1530 default=1530>
+              </div>
+            </div>
+            <div class="form-group row">
+                <label for="tax" class="col-sm-2 col-form-label">Tax</label>
+                <div class="col-sm-10">
+                  <input type="number" class="form-control" id="tax" placeholder=150 default=150>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="mpg" class="col-sm-2 col-form-label">MPG</label>
+                <div class="col-sm-10">
+                  <input type="number" class="form-control" id="mpg" placeholder=50 default=50>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="engineSize" class="col-sm-2 col-form-label">Engine Size</label>
+                <div class="col-sm-10">
+                  <input type="number" class="form-control" id="engineSize" placeholder=1.1 default=1.1>
+                </div>
+            </div>
+          </form>
+    </div>
+    <p id="predtext"></p>
+    <py-script>
+import asyncio
+import panel as pn
+import pandas as pd
+from panel.io.pyodide import show
+from helper import *
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import datasets
+from pyodide.http import open_url
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from scipy import stats
+import matplotlib.style as style
+from sklearn.ensemble import RandomForestRegressor 
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error 
+from sklearn.metrics import r2_score
+
+url = 'https://raw.githubusercontent.com/ibm-developer-skills-network/pyscript-gp/main/audi.csv'
+url_content = open_url(url)
+df = pd.read_csv(url_content)
+
+def plot(x, y, type):
+    fig, ax = plt.subplots()
+    if type=='splot':
+        sns.scatterplot(y=y, x=x, data=df, ax=ax, label=(x,y))
+    elif type=='lplot':
+        sns.lineplot(y=y, x=x, data=df, ax=ax, label=(x,y))  
+    elif type=='dist':
+        sns.dist(x=x, data=df, ax=ax, label=x)
+    elif type=='bplot':
+        sns.barplot(x=x, y=y, data=df, label=(x,y))
+    elif type=='boplot':
+        sns.boxplot(x=x, y=y, data=df, label=(x,y))
+    pyscript.write("chart1", fig)
+
+# Set up a proxy to be called when a 'change'
+# event occurs in the select control
+from js import document
+from pyodide import create_proxy
+
+def textChange(event):
+   type = document.getElementById("select").value
+   choicex = document.getElementById("inputx").value
+   choicey = document.getElementById("inputy").value
+   plot(choicex, choicey, type)
+
+def mlChange(event):
+   year = document.getElementById("year").value
+   mileage = document.getElementById("mileage").value
+   tax = document.getElementById("tax").value
+   mpg = document.getElementById("mpg").value
+   engineSize = document.getElementById("engineSize").value
+   "${:,.2f}". format(predict(year, mileage, tax, mpg, engineSize))
+
+# set the proxy
+def setup():
+   # Create a JsProxy for the callback function
+   change_proxy = create_proxy(textChange)
+   ex = document.getElementById("inputx")
+   ey = document.getElementById("inputy")
+   t = document.getElementById("select")
+
+   t.addEventListener("change", change_proxy)
+   ex.addEventListener("change", change_proxy)
+   ey.addEventListener("change", change_proxy)
+
+def setup2():
+
+   change_proxy = create_proxy(mlChange)
+
+   eyear = document.getElementById("year")
+   emileage = document.getElementById("mileage")
+   etax = document.getElementById("tax")
+   empg = document.getElementById("mpg")
+   eengineSize = document.getElementById("engineSize")
+
+   eyear.addEventListener("change", change_proxy)
+   emileage.addEventListener("change", change_proxy)
+   etax.addEventListener("change", change_proxy)
+   empg.addEventListener("change", change_proxy)
+   eengineSize.addEventListener("change", change_proxy)
+
+#machine learing 
+df = preprocess(df)
+X_train, X_test, y_train, y_test = split(df)
+lr_model = lr(X_train, y_train)
+
+def predict(year, mileage, tax, mpg, engineSize):
+    out = lr_model.predict(pd.DataFrame([[year, mileage, tax, mpg, engineSize]], columns=X_train.columns))[0]
+    pyscript.write("predtext", out)
+
+setup()
+plot('year','price', type='bplot')
+setup2()
+"${:,.2f}". format(predict(2021, 1529.0, 150.0,52.3,1.6))
+    </py-script>
+</body>
+
+</html>
+
