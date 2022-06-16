@@ -7,7 +7,6 @@
     <py-env>
         - numpy
         - pandas
-        - panel==0.13.1a2
         - paths:
             - src/helper.py
         - seaborn
@@ -96,24 +95,12 @@
     <h7>Predicted Price: </h7>
     <p id="predtext"></p>
     <py-script>
-import asyncio
-import panel as pn
 import pandas as pd
-from panel.io.pyodide import show
 from helper import *
-import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn import datasets
 from pyodide.http import open_url
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from scipy import stats
-import matplotlib.style as style
-from sklearn.ensemble import RandomForestRegressor 
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error 
-from sklearn.metrics import r2_score
 
 url = 'https://raw.githubusercontent.com/ibm-developer-skills-network/pyscript-gp/main/dataset/audi.csv'
 url_content = open_url(url)
@@ -132,9 +119,17 @@ def plot(x, y, type):
     elif type=='boplot':
         sns.boxplot(x=x, y=y, data=df, label=(x,y))
     pyscript.write("chart1", fig)
-    
-# Set up a proxy to be called when a 'change'
-# event occurs in the select control
+
+# machine learing model
+df_p = preprocess(df)
+X_train, X_test, y_train, y_test = split(df_p)
+lr_model = lr(X_train, y_train)
+
+def predict(year, mileage, tax, mpg, engineSize):
+    out = lr_model.predict(pd.DataFrame([[year, mileage, tax, mpg, engineSize]], columns=X_train.columns))[0]
+    pyscript.write("predtext", "${:,.2f}".format(out))
+
+# Set up a proxy to be called when a 'change' event occurs in the text and select control
 from js import document
 from pyodide import create_proxy
 
@@ -180,14 +175,6 @@ def setup2():
    empg.addEventListener("change", change_proxy)
    eengineSize.addEventListener("change", change_proxy)
 
-#machine learing 
-df_p = preprocess(df)
-X_train, X_test, y_train, y_test = split(df_p)
-lr_model = lr(X_train, y_train)
-
-def predict(year, mileage, tax, mpg, engineSize):
-    out = lr_model.predict(pd.DataFrame([[year, mileage, tax, mpg, engineSize]], columns=X_train.columns))[0]
-    pyscript.write("predtext", "${:,.2f}".format(out))
 
 setup()
 plot('mileage','price', type='splot')
