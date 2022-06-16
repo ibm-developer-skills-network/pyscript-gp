@@ -1,7 +1,5 @@
-keras
-tensorflow
-pillow
-scipy
 sklearn
-IPython
+numpy
 pandas
+matplotlib
+seaborn 
