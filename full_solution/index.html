@@ -105,7 +105,12 @@ import matplotlib.pyplot as plt
 url = 'https://raw.githubusercontent.com/ibm-developer-skills-network/pyscript-gp/main/dataset/audi.csv'
 url_content = open_url(url)
 df = pd.read_csv(url_content)
-
+    
+</py-script>
+<py-repl>
+df[0:10]
+</py-repl>
+<py-script>
 def plot(x, y, type):
     fig, ax = plt.subplots()
     if type=='splot':
